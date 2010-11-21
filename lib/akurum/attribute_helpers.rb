@@ -8,4 +8,6 @@ module Akurum
   end
   
   require 'akurum/attribute_helpers/class'
+  require 'akurum/attribute_helpers/enum'
+  require 'akurum/attribute_helpers/enum_map'
 end
