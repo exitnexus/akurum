@@ -86,7 +86,7 @@ module Akurum::Backends::SQL
 
           proc {
             @server.query(sql)
-          }.should raise_error(Base::QueryError)
+          }.should raise_error(QueryError)
         end
         
         it "should handle use and store query synchronization" do
@@ -104,7 +104,7 @@ module Akurum::Backends::SQL
           # validate synchronization error, query after streamed query
           proc {
             result_after = @server.query(sql)
-          }.should raise_error(Base::CommandsSyncError)
+          }.should raise_error(CommandsSyncError)
 
           # validate that connection is cleaned
           result_before = @server.query(sql)

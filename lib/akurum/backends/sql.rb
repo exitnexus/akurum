@@ -1,3 +1,5 @@
+require 'akurum/error'
+
 class String
 	#Exactly a string but different class so sql can avoid escaping it
 	class NoEscape < String
@@ -10,7 +12,54 @@ end
 
 module Akurum
   module Backends
-    module SQL
+    module SQL  
+      class SqlError < Error
+        attr_reader :error
+        attr_reader :errno
+
+        def initialize(error, errno = nil)
+          @error = error
+          @errno = errno
+          super(@error)
+        end
+
+        def to_s()
+          "#{@error}#{" (#{@errno})" if !errno.nil?}"
+        end
+      end
+
+      class QueryError < SqlError
+        attr_reader :query
+
+        def initialize(error, errno = nil, query = nil)
+          @query = query
+          super(error, errno)
+        end
+
+        def to_s()
+          "#{@error}#{" (#{@errno})" if !errno.nil?}#{" on query #{@query}" if !query.nil?}"
+        end
+      end
+
+      class QueryTargetError < QueryError
+        attr_reader :target
+
+        def initialize(error, errno = nil, query = nil, target = nil)
+          @target = target
+          super(error, errno, query)
+        end
+      end
+
+      class ParamError < SqlError; end
+      class ResultError < SqlError; end
+      class ConnectionError < SqlError; end
+      class DeadlockError < QueryError; end
+      class CommandsSyncError < QueryError; end
+      class CannotFindRowError < QueryTargetError; end
+      class CannotFindColError < QueryTargetError; end
+      class CannotFindTableError < QueryTargetError; end
+      class DuplicationError < QueryError; end
+
       class Base
         attr_reader :all_options;
 
@@ -293,53 +342,6 @@ module Akurum
            #$logtrace(Log.new(self, query_time, query, explain, backtrace), :sql)
           end
         end
-
-        class SqlError < Exception
-          attr_reader :error
-          attr_reader :errno
-
-          def initialize(error, errno = nil)
-            @error = error
-            @errno = errno
-            super(@error)
-          end
-
-          def to_s()
-            "#{@error}#{" (#{@errno})" if !errno.nil?}"
-          end
-        end
-
-        class QueryError < SqlError
-          attr_reader :query
-
-          def initialize(error, errno = nil, query = nil)
-            @query = query
-            super(error, errno)
-          end
-
-          def to_s()
-            "#{@error}#{" (#{@errno})" if !errno.nil?}#{" on query #{@query}" if !query.nil?}"
-          end
-        end
-
-        class QueryTargetError < QueryError
-          attr_reader :target
-
-          def initialize(error, errno = nil, query = nil, target = nil)
-            @target = target
-            super(error, errno, query)
-          end
-        end
-
-        class ParamError < SqlError; end
-        class ResultError < SqlError; end
-        class ConnectionError < SqlError; end
-        class DeadlockError < QueryError; end
-        class CommandsSyncError < QueryError; end
-        class CannotFindRowError < QueryTargetError; end
-        class CannotFindColError < QueryTargetError; end
-        class CannotFindTableError < QueryTargetError; end
-        class DuplicationError < QueryError; end
 
         private
         #takes an object and turns it to a quoted string form
