@@ -42,12 +42,12 @@ module Akurum::Backends::SQL
         it "should support basic single server operations" do
           sql = "SELECT num,str FROM tmp"
           result = @server.query(sql)
-          result.should be_kind_of(MySQL::DBResultMysql)
+          result.should be_kind_of(MySQL::Result)
           result.num_rows().should eql(result.total_rows())
 
           sql = "SELECT SQL_CALC_FOUND_ROWS num,str FROM tmp WHERE id < #{HelperBackendSQL::TEST_DATA_ROWS_SQL / 2} LIMIT 20"
           result = @server.query(sql)
-          result.should be_kind_of(MySQL::DBResultMysql)
+          result.should be_kind_of(MySQL::Result)
           result.num_rows().should_not eql(result.total_rows())
         end
         
@@ -59,18 +59,18 @@ module Akurum::Backends::SQL
           sql = "SELECT num,str FROM tmp WHERE id < #{HelperBackendSQL::TEST_DATA_ROWS_SQL / 2} ORDER BY num"
 
           result_before = @server.query(sql)
-          result_before.should be_kind_of(MySQL::DBResultMysql)
+          result_before.should be_kind_of(MySQL::Result)
           result_before.each {|row| rows_before << row['num']}
 
           result_streamed = @server.query_streamed(sql)
-          result_streamed.should be_kind_of(MySQL::DBResultMysql)
+          result_streamed.should be_kind_of(MySQL::Result)
           result_streamed.each {|row| rows_streamed << row['num']}
           # this shouldn't retrieve any additional rows
           result_streamed.each {|row| rows_streamed << row['num']}
 
           # check if we can query correctly after stream query
           result_after = @server.query(sql)
-          result_after.should be_kind_of(MySQL::DBResultMysql)
+          result_after.should be_kind_of(MySQL::Result)
           result_after.each {|row| rows_after << row['num']}
 
           # validate that replies are the same
@@ -96,10 +96,10 @@ module Akurum::Backends::SQL
           sql = "SELECT num,str FROM tmp WHERE id < #{HelperBackendSQL::TEST_DATA_ROWS_SQL / 2} ORDER BY num"
 
           result_before = @server.query(sql)
-          result_before.should be_kind_of(MySQL::DBResultMysql)
+          result_before.should be_kind_of(MySQL::Result)
           result_before.each {|row| rows_before << row['num']}
           result_streamed = @server.query_streamed(sql)
-          result_streamed.should be_kind_of(MySQL::DBResultMysql)
+          result_streamed.should be_kind_of(MySQL::Result)
 
           # validate synchronization error, query after streamed query
           proc {
@@ -108,7 +108,7 @@ module Akurum::Backends::SQL
 
           # validate that connection is cleaned
           result_before = @server.query(sql)
-          result_before.should be_kind_of(MySQL::DBResultMysql)
+          result_before.should be_kind_of(MySQL::Result)
           result_before.each {|row| rows_after << row['num']}
 
           # validate results
@@ -121,15 +121,15 @@ module Akurum::Backends::SQL
 
           # validate manual cleanup of streamed query
           @server.query_streamed(sql).free
-          @server.query(sql).should be_kind_of(MySQL::DBResultMysql)
+          @server.query(sql).should be_kind_of(MySQL::Result)
 
           # validate cleanup after broken retrieval of rows
           result = @server.query_streamed(sql)
-          result.should be_kind_of(MySQL::DBResultMysql)
+          result.should be_kind_of(MySQL::Result)
           result.each {|row| break}
 
           # validate that query was cleaned
-          @server.query(sql).should be_kind_of(MySQL::DBResultMysql)
+          @server.query(sql).should be_kind_of(MySQL::Result)
         end
       end
     end

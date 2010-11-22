@@ -386,6 +386,9 @@ module Akurum
           end
           return str;
         end
+        
+        class Result
+        end
       end
     end
   end
