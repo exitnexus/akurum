@@ -1,7 +1,7 @@
-require File.join(File.dirname(__FILE__), "..", "spec_helper")
-require 'akurum/backends/memcache'
+require File.join(File.dirname(__FILE__), "spec_helper")
+require 'akurum/memcache'
 
-module Akurum::Backends
+module Akurum
   describe MemCache do
   	SPEC_MEMCACHE_EXPIRE = 60
   	SPEC_MEMCACHE_KEY = 'spec_memcache'
