@@ -1,7 +1,7 @@
 require "set"
 
 module Akurum
-  #This class is designed to store MySQL enums.  Each instance will have it's own
+  #This class is designed to store Mysql enums.  Each instance will have it's own
   #list of valid symbols defined at creation time.
   class Enum
     attr_reader :symbol, :symbols
