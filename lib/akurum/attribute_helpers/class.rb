@@ -64,7 +64,7 @@ module Akurum
     # See AttributeHelpers.class_attr for more information.
     def class_attr_reader(*syms)
       self_name = self.to_s;
-      self_name.gsub!(':', '_');
+      self_name.gsub!(/[:<>#]/, '_')
 
       syms.flatten.each { |sym|
         if (!class_variable_defined?("@@#{self_name}_#{sym}"))
@@ -103,7 +103,7 @@ module Akurum
     # See AttributeHelpers.class_attr for more information.
     def class_attr_writer(*syms)
       self_name = self.to_s;
-      self_name.gsub!(':', '_');
+      self_name.gsub!(/[:<>#]/, '_')
 
       syms.flatten.each { |sym|
         self.send(:define_method, :"#{sym}=") { |value|
