@@ -333,3 +333,4 @@ module Akurum
 end
 
 require 'akurum/backends/mysql/result'
+require 'akurum/backends/mysql/column'
