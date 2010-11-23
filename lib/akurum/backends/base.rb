@@ -1,4 +1,5 @@
 require 'akurum/error'
+require 'akurum/context'
 require 'akurum/backends'
 
 class String
@@ -337,9 +338,9 @@ module Akurum
         case query
         when /^EXPLAIN/
         when /^(INSERT|UPDATE|DELETE)/
-         #$logdebug(Log.new(self, query_time, query, explain, backtrace), :sql)
+         Context.log(Log.new(self, query_time, query, explain, backtrace), Context::Log::DEBUG)
         else
-         #$logtrace(Log.new(self, query_time, query, explain, backtrace), :sql)
+         Context.log(Log.new(self, query_time, query, explain, backtrace), Context::Log::TRACE)
         end
       end
 
@@ -364,7 +365,7 @@ module Akurum
             when String::NoEscape
               obj.to_s
             when String
-              "'" + quote(obj.convertible_to_utf8) + "'";
+              "'" + quote(obj) + "'";
             when nil
               "NULL";
             when true
@@ -379,7 +380,7 @@ module Akurum
             when Lazy::Promise
               return prepare_object(demand(obj), split);
             else #try .to_s before failing?
-              raise ParamError.new("Trying to escape an unknown object #{obj.class}")
+              raise ParamError.new("Trying to escape an unknown object #{obj.inspect} (#{obj.class})")
             end
         if(split > 0)
           str << "/**%: #{str} :%**/";

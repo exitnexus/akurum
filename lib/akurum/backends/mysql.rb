@@ -1,3 +1,4 @@
+require 'akurum/context'
 require 'akurum/backends/base'
 require 'mysql'
 
@@ -79,7 +80,7 @@ module Akurum
           sleep((retries + 1) * ((rand(200)+50)/1000.0));
 
           # retry
-         #$logwarning("Failed to connect to #{@server}:#{@dbname}, reconnecting.", :sql)
+          Context.log("Failed to connect to #{@server}:#{@dbname}, reconnecting.", Context::Log::WARNING)
           retries += 1
           retry
         end
@@ -88,18 +89,18 @@ module Akurum
           # set last_query_time here, as it is used to tell if a connection has timed out
           @last_query_time = @connection_creation_time = Time.now.to_f
 
-         #$logtrace("Connected to #{@server}:#{@dbname}", :sql)
+          Context.log("Connected to #{@server}:#{@dbname}", Context::Log::TRACE)
           return true
         else
           # this should never happen
-         #$logerror("No database after connect to #{@server}:#{@dbname}", :sql)
+          Context.log("No database after connect to #{@server}:#{@dbname}", Context::Log::ERROR)
           return false
         end
       end
 
       #This creates the database and creates its tables based on those from the config and database specified.
       def bootstrap(config_name, db)
-       #$loginfo "Creating database #{@dbname}.", :sql
+        Context.log("Creating database #{@dbname}.", Context::Log::INFO)
         config = ConfigBase.load_config(config_name);
         db_creator = ::Mysql.real_connect(@server, @user, @password, nil, @port)
         db_creator.create_db(@dbname)
@@ -158,7 +159,7 @@ module Akurum
             raise ConnectionError.new(e.error, e.errno) if retried
 
             # retry query
-           #$logwarning("#{e.error} (#{e.errno}) on <#{@server}:#{@dbname}>, reconnecting", :sql)
+            Context.log("#{e.error} (#{e.errno}) on <#{@server}:#{@dbname}>, reconnecting", Context::Log::WARNING)
             retried = true
             retry
 
@@ -182,7 +183,7 @@ module Akurum
           when ::Mysql::Error::ER_NO_SUCH_TABLE
             raise CannotFindTableError.new(e.error, e.errno, prepared)
 
-          when ::Mysql::Error::ER_LOCK_WAIT_TIMEOUT, Mysql::Error::ER_LOCK_DEADLOCK
+          when ::Mysql::Error::ER_LOCK_WAIT_TIMEOUT, ::Mysql::Error::ER_LOCK_DEADLOCK
             raise DeadlockError.new(e.error, e.errno, prepared)
 
           when ::Mysql::Error::ER_DUP_ENTRY

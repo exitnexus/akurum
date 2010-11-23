@@ -79,6 +79,7 @@ require 'uri'
 require 'zlib'
 
 require 'akurum/lazy'
+require 'akurum/context'
 
 module Akurum
   ### A Ruby implementation of the 'memcached' client interface.
@@ -713,7 +714,7 @@ module Akurum
           diff_t = Time.new.to_f - start_t
 
           message = DeleteLog.new(svr, diff_t, "delete", [key], time)
-         #$logdebug(message, :memcache)
+          Context.log(message, Context::Log::DEBUG)
 
           res
         }
@@ -722,7 +723,7 @@ module Akurum
       # this should NEVER happen
       if res.nil?
         this_method = (caller[0] =~ /`([^']*)'/ and $1)
-       #$logerror("Invalid internal nil response in #{this_method}!", :memcache)
+        Context.log("Invalid internal nil response in #{this_method}!", Context::Log::ERROR)
         return false
       end
 
@@ -758,7 +759,7 @@ module Akurum
           diff_t = Time.new.to_f - start_t
 
           message = DeleteLog.new((map.length == 1 ? svr : map.length), diff_t, "delete_many", keys, 0)
-         #$logdebug(message, :memcache)
+          Context.log(message, Context::Log::DEBUG)
 
           res
         }
@@ -767,7 +768,7 @@ module Akurum
       # this should NEVER happen
       if res.nil?
         this_method = (caller[0] =~ /`([^']*)'/ and $1)
-       #$logerror("Invalid internal nil response in #{this_method}!", :memcache)
+        Context.log("Invalid internal nil response in #{this_method}!", Context::Log::ERROR)
         return 0
       end
 
@@ -804,7 +805,7 @@ module Akurum
       # this should NEVER happen
       if res.nil?
         this_method = (caller[0] =~ /`([^']*)'/ and $1)
-       #$logerror("Invalid internal nil response in #{this_method}!", :memcache)
+        Context.log("Invalid internal nil response in #{this_method}!", Context::Log::ERROR)
         return false
       end
 
@@ -853,7 +854,7 @@ module Akurum
       # this should NEVER happen
       if res.nil?
         this_method = (caller[0] =~ /`([^']*)'/ and $1)
-       #$logerror("Invalid internal nil response in #{this_method}!", :memcache)
+        Context.log("Invalid internal nil response in #{this_method}!", Context::Log::ERROR)
         return false
       end
 
@@ -1063,7 +1064,7 @@ module Akurum
       # no available server found
       if (@no_servers_log.nil? || @no_servers_log < Time.now.to_i)
         @no_servers_log = Time.now.to_i + @retry_delay
-       #$logcritical("No memcached servers available", :memcache)
+        Context.log("No memcached servers available", Context::Log::ERROR)
       end
 
       raise MemCacheNoServerError, "No memcached servers available"
@@ -1125,7 +1126,7 @@ module Akurum
           diff_t = Time.new.to_f - start_t
 
           message = StoreLog.new(svr, diff_t, type, storelog, exptime)
-         #$logdebug(message, :memcache)
+          Context.log(message, Context::Log::DEBUG)
 
           res
         }
@@ -1134,7 +1135,7 @@ module Akurum
       # this should NEVER happen
       if res.nil?
         this_method = (caller[0] =~ /`([^']*)'/ and $1)
-       #$logerror("Invalid internal nil response in #{this_method}!", :memcache)
+        Context.log("Invalid internal nil response in #{this_method}!", Context::Log::ERROR)
         return {}
       end
 
@@ -1210,7 +1211,7 @@ module Akurum
 
           # check if reply has correct END tag
           if !reply.cmd?("END\r\n", -1)
-           #$logerror("Malformed reply from #{svr}", :memcache)
+            Context.log("Malformed reply from #{svr}", Context::Log::ERROR)
             next
           end
 
@@ -1228,7 +1229,7 @@ module Akurum
           }
 
           if (@debug)
-           #$logtrace(FetchLog.new((map.length == 1 ? svr : map.length), diff, type, found_this, true), :memcache)
+            Context.log(FetchLog.new((map.length == 1 ? svr : map.length), diff, type, found_this, true), Context::Log::TRACE)
             found += found_this
           end
         end
@@ -1238,7 +1239,7 @@ module Akurum
           map.each {|svr, keys|
             missed = keys.chomp.split(" ").map{|i| cachekeys[i] }.compact - found
             if (!missed.empty?)
-             #$logtrace(FetchLog.new((map.length == 1 ? svr : map.length), diff, type, missed, false), :memcache)
+             Context.log(FetchLog.new((map.length == 1 ? svr : map.length), diff, type, missed, false), Context::Log::TRACE)
             end
           }
         end
@@ -1266,7 +1267,7 @@ module Akurum
       # this should NEVER happen
       if res.nil?
         this_method = (caller[0] =~ /`([^']*)'/ and $1)
-       #$logerror("Invalid internal nil response in #{this_method}!", :memcache)
+        Context.log("Invalid internal nil response in #{this_method}!", Context::Log::ERROR)
         return nil
       end
 
@@ -1373,8 +1374,8 @@ module Akurum
       key = "Broken-#{Process::pid}:#{Time.now.to_f}::#{@@broken_counter}"
       # Store the value for reference
       self.store(:set, {key => val}, Constants::MONTH_IN_SECONDS)
-     #$logwarning("KNOWN ISSUE NEX-1714: Exception on memcache key restore", :memcache)
-     #$logwarning("Saving data that caused exception '#{$!}' at '#{key}'", :memcache)
+      Context.log("KNOWN ISSUE NEX-1714: Exception on memcache key restore", Context::Log::WARNING)
+      Context.log("Saving data that caused exception '#{$!}' at '#{key}'", Context::Log::WARNING)
       # I suspect we are only ever getting here if we have F_COMPRESSED data.
       # r8150, by Nathan on 2007-05-11, took out url_encoding of values, and
       # this would typically happen with compressed data.  I hypothesize that
@@ -1391,7 +1392,7 @@ module Akurum
       flags_set << 'F_COMPRESSED' if (flags & F_COMPRESSED).nonzero?
       flags_set << 'F_SERIALIZED' if (flags & F_SERIALIZED).nonzero?
       flags_set << 'F_NUMERIC'    if (flags & F_NUMERIC).nonzero?
-     #$logwarning("Flags set: #{flags_set.join(', ')}", :memcache)
+      Context.log("Flags set: #{flags_set.join(', ')}", Context::Log::WARNING)
       # Not deleting original key as at this point we don't know it
 
       # pretend that key does not exist
@@ -1515,7 +1516,7 @@ module Akurum
         end
       rescue Object
         # cleaning after exception is handled below
-       #$logerror("Exception (#{$!.class}) during poll", :memcache)
+        Context.log("Exception (#{$!.class}) during poll", Context::Log::ERROR)
 
         # NOTE: we can may try to make something more elaborate:
         # * detect socket in reactor that actually died and clean it
@@ -1525,7 +1526,7 @@ module Akurum
       # NOTE: this uses io-reactor internal hash from to extract server
       # associated with specific socket that "timeout"
       if (!@reactor.empty?)
-       #$logerror("Query execution timeout, dead or overloaded server(s)", :memcache)
+        Context.log("Query execution timeout, dead or overloaded server(s)", Context::Log::ERROR)
         @reactor.handles.each_value {|handle|
           srv, _ = handle[:args]
 
@@ -1616,7 +1617,7 @@ module Akurum
     # we have to ensure that buffers are invalidated for current server
     # NOTE: operation is not retried on different server
     rescue
-     #$logerror("Exception (#{$!.class}) during #{ev} event on #{server} server", :memcache)
+      Context.log("Exception (#{$!.class}) during #{ev} event on #{server} server", Context::Log::ERROR)
 
       # clear buffers to correctly handle results handling
       buffers[:rbuf].blocks.clear
@@ -1634,13 +1635,13 @@ module Akurum
 
       case buffer
       when MemCache::GENERAL_ERROR
-       #$logerror("Unknown protocol command", :memcache)
+        Context.log("Unknown protocol command", Context::Log::ERROR)
       when MemCache::CLIENT_ERROR
-       #$logerror("Client protocol error: #{$1}", :memcache)
+        Context.log("Client protocol error: #{$1}", Context::Log::ERROR)
       when MemCache::SERVER_ERROR
-       #$logerror("Server (#{server}) protocol error: #{$1}", :memcache)
+        Context.log("Server (#{server}) protocol error: #{$1}", Context::Log::ERROR)
       else
-       #$logerror("Unknown internal error", :memcache)
+        Context.log("Unknown internal error", Context::Log::ERROR)
         server.mark_dead("unknown protocol error");
       end
     end
@@ -1776,7 +1777,7 @@ module Akurum
         @status = "DEAD: %s: Will retry at %s" %
           [ reason, @retry ]
 
-       #$loginfo("Marking server #{self} dead, reason: #{reason}", :memcache)
+        Context.log("Marking server #{self} dead, reason: #{reason}", Context::Log::ERROR)
       end
 
 
@@ -1920,7 +1921,7 @@ module Akurum
       ### data
       def done?
         if @num_results_needed < 0
-         #$logerror("Received more data than expected from memcached", :memcache)
+          Context.log("Received more data than expected from memcached", Context::Log::ERROR)
           return true
         else
           return @num_results_needed == 0
